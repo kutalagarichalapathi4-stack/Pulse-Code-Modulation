@@ -3,6 +3,7 @@
 Write a simple Python program for the modulation and demodulation of PCM, and DM.
 # Tools required
 # Program
+PCM
 ```
 #PCM
 import numpy as np
@@ -69,15 +70,81 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()
 ```
-# Output Waveform
-<img width="1920" height="1080" alt="Screenshot 2025-09-22 141253" src="https://github.com/user-attachments/assets/e9698f22-5ff4-4d00-8514-15b5774166f8" />
-
+DM
 ```
+#Delta Modulation
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import butter, filtfilt
+# Parameters
+fs = 10000  # Sampling frequency
+f = 10  # Signal frequency
+T = 1  # Duration in seconds
+delta = 0.1  # Step size
+t = np.arange(0, T, 1/fs)
+message_signal = np.sin(2 * np.pi * f * t)  # Sine wave as input signal
+# Delta Modulation Encoding
+encoded_signal = []
+dm_output = [0]  # Initial value of the modulated signal
+prev_sample = 0
+for sample in message_signal:
+    if sample > prev_sample:
+        encoded_signal.append(1)
+        dm_output.append(prev_sample + delta)
+    else:
+        encoded_signal.append(0)
+        dm_output.append(prev_sample - delta)
+    prev_sample = dm_output[-1]
+# Delta Demodulation (Reconstruction)
+demodulated_signal = [0]
+for bit in encoded_signal:
+    if bit == 1:
+        demodulated_signal.append(demodulated_signal[-1] + delta)
+    else:
+        demodulated_signal.append(demodulated_signal[-1] - delta)
+# Convert to numpy array
+demodulated_signal = np.array(demodulated_signal)
+# Apply a low-pass Butterworth filter
+def low_pass_filter(signal, cutoff_freq, fs, order=4):
+    nyquist = 0.5 * fs
+    normal_cutoff = cutoff_freq / nyquist
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    return filtfilt(b, a, signal)
+filtered_signal = low_pass_filter(demodulated_signal, cutoff_freq=20, fs=fs)
+# Plotting the Results
+plt.figure(figsize=(12, 6))
+plt.subplot(3, 1, 1)
+plt.plot(t, message_signal, label='Original Signal', linewidth=1)
+plt.legend()
+plt.grid()
+plt.subplot(3, 1, 2)
+plt.step(t, dm_output[:-1], label='Delta Modulated Signal', where='mid')
+plt.legend()
+plt.grid()
+plt.subplot(3, 1, 3)
+plt.plot(t, filtered_signal[:-1], label='Demodulated & Filtered Signal', linestyle='dotted', linewidth=1, color='r')
+plt.legend()
+plt.grid()
+plt.tight_layout()
+plt.show()
+```
+# Output Waveform
+PCM
+<img width="1920" height="1080" alt="Screenshot 2025-09-22 141253" src="https://github.com/user-attachments/assets/e9698f22-5ff4-4d00-8514-15b5774166f8" />
+DM
+<img width="1203" height="590" alt="image" src="https://github.com/user-attachments/assets/24276c21-7279-4e9f-8b07-90cbb7ef7c03" />
+
 # Results
+PCM
+```
 The PCM encoding process successfully quantized the original sine wave into 16 levels.
 
 The demodulated signal closely resembled the original signal with minor quantization noise.
 
 The output waveforms validated the functioning of PCM in digital communication systems.
+```
+DM
+```
+Delta Modulation successfully converts a continuous sine wave into a 1-bit digital signal. The demodulated signal, after applying a low-pass filter, closely resembles the original signal but may have quantization errors and slope overload distortion. Proper step size selection (Δ) improves accuracy.
 ```
 # Hardware experiment output waveform.
